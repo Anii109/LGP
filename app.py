@@ -112,7 +112,7 @@ selected_movie = st.selectbox("Select a movie to get recommendations", movies_df
 
 if st.button("Recommend"):
     recommendations = recommend(selected_movie)
-    for movie in recommendations:
+    for idx, movie in enumerate(recommendations):
         st.subheader(movie["title"])
         cols = st.columns([1, 2])
         with cols[0]:
@@ -125,8 +125,18 @@ if st.button("Recommend"):
             st.markdown(f"**Rating:** {movie['rating']}")
             st.markdown(f"**Release Date:** {movie['release_date']}")
             st.markdown(f"**Overview:** {movie['overview']}")
+
             if movie['trailer_url']:
-                st.markdown(f"[▶️ Watch Trailer]({movie['trailer_url']})", unsafe_allow_html=True)
+                # Button that opens a new tab to watch trailer
+                trailer_button = f"""
+                    <a href="{movie['trailer_url']}" target="_blank">
+                        <button style="background-color:#ff4b4b;color:white;border:none;padding:8px 16px;border-radius:5px;cursor:pointer;">
+                            ▶️ Watch Trailer
+                        </button>
+                    </a>
+                """
+                st.markdown(trailer_button, unsafe_allow_html=True)
             else:
                 st.markdown("🚫 Trailer not available")
         st.markdown("---")
+
