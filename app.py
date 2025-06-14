@@ -1,4 +1,3 @@
-'''
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -139,6 +138,4 @@ if st.button("Recommend"):
                 st.markdown(trailer_button, unsafe_allow_html=True)
             else:
                 st.markdown("🚫 Trailer not available")
-        st.markdown("---")
-
-'''#Sorted with trailer 
+        st.markdown("---") 
