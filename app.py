@@ -255,7 +255,7 @@ if st.button("Recommend"):
             st.markdown(f"**Release Date:** {movie['release_date']}")
             st.markdown(f"**Overview:** {movie['overview']}")
         st.markdown("---")
-
+'''
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -388,7 +388,7 @@ if st.button("Recommend"):
             else:
                 st.markdown("🚫 Trailer not available")
         st.markdown("---")
-        
+        '''
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -524,6 +524,7 @@ if st.button("Recommend"):
                 st.markdown("🚫 Trailer not available")
         st.markdown("---")
 '''
+'''
 import streamlit as st
 import pandas as pd
 import requests
@@ -647,3 +648,4 @@ if st.button("Recommend"):
                 """, unsafe_allow_html=True)
             else:
                 st.caption("Trailer not available.")
+'''
