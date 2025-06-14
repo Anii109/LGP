@@ -1,4 +1,4 @@
-'''
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -310,3 +310,4 @@ if st.button("Recommend"):
     if st.button("📥 Submit Ratings"):
         save_rating(selected_movie, rating_store)
         st.success("✅ Your ratings have been saved!")
+'''
