@@ -1,4 +1,4 @@
-
+'''
 import streamlit as st
 import pickle
 import pandas as pd
@@ -128,3 +128,130 @@ if st.button("Recommend"):
                 st.image(posters[idx])
     else:
         st.error("Movie not found or insufficient data.")
+'''
+import streamlit as st
+import pandas as pd
+import numpy as np
+import requests
+import pickle
+import os
+import ast
+from nltk.stem.porter import PorterStemmer
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# =================== TMDB API KEY ===================
+API_KEY = "e6ba2f139288bd08eac320a78add299a"  # Replace with your TMDB key
+
+# =================== Fetch Poster from TMDB ===================
+def fetch_movie_details(movie_id):
+    url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={API_KEY}&language=en-US"
+    response = requests.get(url)
+    data = response.json()
+    return {
+        "poster": "https://image.tmdb.org/t/p/w500/" + data.get('poster_path') if data.get('poster_path') else None,
+        "title": data.get("title"),
+        "genres": ", ".join([genre['name'] for genre in data.get("genres", [])]),
+        "rating": data.get("vote_average"),
+        "overview": data.get("overview"),
+        "release_date": data.get("release_date")
+    }
+
+# =================== Generate Pickle Files ===================
+def convert(obj):
+    L = []
+    for i in ast.literal_eval(obj):
+        L.append(i['name'])
+    return L
+
+def convert3(obj):
+    L = []
+    counter = 0
+    for i in ast.literal_eval(obj):
+        if counter != 3:
+            L.append(i['name'])
+            counter += 1
+        else:
+            break
+    return L
+
+def fetch_director(obj):
+    for i in ast.literal_eval(obj):
+        if i['job'] == 'Director':
+            return [i['name']]
+    return []
+
+def stem(text):
+    ps = PorterStemmer()
+    return " ".join([ps.stem(i) for i in text.split()])
+
+def generate_data():
+    movies = pd.read_csv("tmdb_5000_movies.csv")
+    credits = pd.read_csv("tmdb_5000_credits.csv")
+    movies = movies.merge(credits, on='title')
+    movies = movies[['movie_id', 'title', 'overview', 'genres', 'keywords', 'cast', 'crew']]
+    movies.dropna(inplace=True)
+
+    movies['genres'] = movies['genres'].apply(convert)
+    movies['keywords'] = movies['keywords'].apply(convert)
+    movies['cast'] = movies['cast'].apply(convert3)
+    movies['crew'] = movies['crew'].apply(fetch_director)
+    movies['overview'] = movies['overview'].apply(lambda x: x.split())
+
+    for feature in ['genres', 'keywords', 'cast', 'crew']:
+        movies[feature] = movies[feature].apply(lambda x: [i.replace(" ", "") for i in x])
+
+    movies['tags'] = movies['overview'] + movies['genres'] + movies['keywords'] + movies['cast'] + movies['crew']
+    new_df = movies[['movie_id', 'title', 'tags']]
+    new_df['tags'] = new_df['tags'].apply(lambda x: " ".join(x))
+    new_df['tags'] = new_df['tags'].apply(lambda x: x.lower())
+    new_df['tags'] = new_df['tags'].apply(stem)
+
+    cv = CountVectorizer(max_features=5000, stop_words='english')
+    vectors = cv.fit_transform(new_df['tags']).toarray()
+
+    similarity = cosine_similarity(vectors)
+
+    pickle.dump(new_df, open('movies.pkl', 'wb'))
+    pickle.dump(similarity, open('similarity.pkl', 'wb'))
+
+# =================== Recommend Function ===================
+def recommend(movie):
+    movie_index = movies_df[movies_df['title'] == movie].index[0]
+    distances = similarity[movie_index]
+    movie_list = sorted(list(enumerate(distances)), reverse=True, key=lambda x: x[1])[1:6]
+
+    recommended = []
+    for i in movie_list:
+        movie_id = movies_df.iloc[i[0]].movie_id
+        details = fetch_movie_details(movie_id)
+        recommended.append(details)
+    return recommended
+
+# =================== Main App ===================
+if not os.path.exists("movies.pkl") or not os.path.exists("similarity.pkl"):
+    generate_data()
+
+movies_df = pickle.load(open("movies.pkl", "rb"))
+similarity = pickle.load(open("similarity.pkl", "rb"))
+
+st.title("🎬 Movie Recommender System")
+
+selected_movie = st.selectbox("Select a movie to get recommendations", movies_df['title'].values)
+
+if st.button("Recommend"):
+    recommendations = recommend(selected_movie)
+    for movie in recommendations:
+        st.subheader(movie["title"])
+        cols = st.columns([1, 2])
+        with cols[0]:
+            if movie["poster"]:
+                st.image(movie["poster"])
+            else:
+                st.text("No Image")
+        with cols[1]:
+            st.markdown(f"**Genres:** {movie['genres']}")
+            st.markdown(f"**Rating:** {movie['rating']}")
+            st.markdown(f"**Release Date:** {movie['release_date']}")
+            st.markdown(f"**Overview:** {movie['overview']}")
+        st.markdown("---")
