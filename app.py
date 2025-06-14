@@ -126,9 +126,7 @@ if st.button("Recommend"):
             st.markdown(f"**Release Date:** {movie['release_date']}")
             st.markdown(f"**Overview:** {movie['overview']}")
             if movie['trailer_url']:
-                trailer_button = st.button(f"▶️ Watch Trailer: {movie['title']}", key=movie['id'])
-                if trailer_button:
-                    st.markdown(f"<meta http-equiv='refresh' content='0; url={movie['trailer_url']}' />", unsafe_allow_html=True)
+                st.markdown(f"[▶️ Watch Trailer]({movie['trailer_url']})", unsafe_allow_html=True)
             else:
                 st.markdown("🚫 Trailer not available")
         st.markdown("---")
